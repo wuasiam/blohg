@@ -38,6 +38,7 @@ def create_app(repo_path=None):
     app.config.setdefault('TEMPLATES_DIR', 'templates')
     app.config.setdefault('STATIC_DIR', 'static')
     app.config.setdefault('ATTACHMENT_DIR', 'content/attachments')
+    app.config.setdefault('PLUGIN_DIR', 'plugins')
     app.config.setdefault('ROBOTS_TXT', True)
     app.config.setdefault('SHOW_RST_SOURCE', True)
     app.config.setdefault('POST_EXT', '.rst')
