@@ -27,7 +27,6 @@ class BlohgImporter(object):
     def __init__(self, wrapper_module):
         self.wrapper_module = wrapper_module
         self.prefix = wrapper_module + '.'
-        self.loaded = []
 
     def __eq__(self, other):
         return self.__class__.__module__ == other.__class__.__module__ and \
@@ -48,8 +47,6 @@ class BlohgImporter(object):
             return self
 
     def load_module(self, fullname):
-        if fullname in sys.modules and fullname in self.loaded:
-            return sys.modules[fullname]
         name = fullname[len(self.prefix):]
         modules = self.lookup_modules()
         if name in modules:
@@ -60,7 +57,6 @@ class BlohgImporter(object):
             if filename.endswith(posixpath.sep + '__init__.py'):
                 mod.__path__ = [filename.rsplit(posixpath.sep, 1)[0]]
             exec modules[name].data() in mod.__dict__
-            self.loaded.append(fullname)
             return mod
 
     def lookup_modules(self):
