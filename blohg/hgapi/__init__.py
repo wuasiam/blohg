@@ -6,7 +6,7 @@
     Package with Mercurial-related stuff needed by blohg to load posts
     and static pages.
 
-    :copyright: (c) 2010-2011 by Rafael Goncalves Martins
+    :copyright: (c) 2010-2012 by Rafael Goncalves Martins
     :license: GPL-2, see LICENSE for more details.
 """
 
@@ -20,15 +20,17 @@ from blohg.hgapi.static import MercurialStaticFile
 from blohg.hgapi.templates import MercurialLoader
 
 
-def setup_mercurial(app):
+def setup_mercurial(app, hgui=None):
     """This function adds a :class:`Hg` instance to an application object, as a
     ``hg`` attribute, and reloads it as needed.
 
     :param app: the application object, must have a 'REPO_PATH' configuration
                 parameter.
+    :param hgui: a Mercurial ui object.
     """
 
-    # attach the Hg object
+    # create an ui object and attach the Hg object to app
+    app.hgui = hgui or ui.ui()
     app.hg = Hg(app)
 
     # setup our jinja2 custom loader and static file handlers
@@ -87,7 +89,7 @@ class Hg(object):
         if repopath is None:
             return
 
-        repo = hg.repository(ui.ui(), repopath)
+        repo = hg.repository(self.app.hgui, repopath)
         try:
             default_branch = repo.branchtags()['default']
         except KeyError:
@@ -160,7 +162,6 @@ class Hg(object):
                     self._parse_aliases(post)
                     self.posts.append(post)
                     self.tags = self.tags.union(set(post.tags))
-
 
         # sort posts reverse by date. sort pages is useless :P
         self.posts = sorted(self.posts, lambda a, b: b.date - a.date)
