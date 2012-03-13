@@ -37,7 +37,7 @@ class BlohgImporter(object):
         return not self.__eq__(other)
 
     @staticmethod
-    def new(*args,  **kwargs):
+    def new(*args, **kwargs):
         obj = BlohgImporter(*args, **kwargs)
         sys.meta_path[:] = [x for x in sys.meta_path if obj != x] + [obj]
         return obj
@@ -48,7 +48,7 @@ class BlohgImporter(object):
 
     def load_module(self, fullname):
         name = fullname[len(self.prefix):]
-        modules = self.lookup_modules()
+        modules = lookup_plugins()
         if name in modules:
             filename = modules[name].path()
             sys.modules[fullname] = mod = new_module(fullname)
@@ -56,20 +56,22 @@ class BlohgImporter(object):
             mod.__file__ = 'repo:' + filename
             if filename.endswith(posixpath.sep + '__init__.py'):
                 mod.__path__ = [filename.rsplit(posixpath.sep, 1)[0]]
-            exec modules[name].data() in mod.__dict__
+            code = compile(modules[name].data(), mod.__file__, 'exec')
+            exec code in mod.__dict__
             return mod
 
-    def lookup_modules(self):
-        plugin_dir = current_app.config['PLUGIN_DIR']
-        modules = {}
-        for f in current_app.hg.revision:
-            module_name = None
-            if f.startswith(plugin_dir + posixpath.sep):
-                if f.endswith(posixpath.sep + '__init__.py'):
-                    module_name = f[len(plugin_dir) + 1:-12]
-                elif f.endswith('.py'):
-                    module_name = f[len(plugin_dir) + 1:-3]
-            if module_name is not None and len(module_name) > 0:
-                module_name = module_name.replace(posixpath.sep, '.')
-                modules[module_name] = current_app.hg.revision[f]
-        return modules
+
+def lookup_plugins():
+    plugin_dir = current_app.config['PLUGIN_DIR']
+    modules = {}
+    for f in current_app.hg.revision:
+        module_name = None
+        if f.startswith(plugin_dir + posixpath.sep):
+            if f.endswith(posixpath.sep + '__init__.py'):
+                module_name = f[len(plugin_dir) + 1:-12]
+            elif f.endswith('.py'):
+                module_name = f[len(plugin_dir) + 1:-3]
+        if module_name is not None and len(module_name) > 0:
+            module_name = module_name.replace(posixpath.sep, '.')
+            modules[module_name] = current_app.hg.revision[f]
+    return modules

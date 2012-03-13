@@ -9,6 +9,7 @@
     :license: GPL-2, see LICENSE for more details.
 """
 
+
 def setup():
     from blohg.hgapi.plugins import BlohgImporter
     BlohgImporter.new(__name__)
