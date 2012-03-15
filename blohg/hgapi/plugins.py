@@ -64,7 +64,7 @@ class BlohgImporter(object):
 def lookup_plugins():
     plugin_dir = current_app.config['PLUGIN_DIR']
     modules = {}
-    for f in current_app.hg.revision:
+    for f in current_app.hg.revision.manifest():
         module_name = None
         if f.startswith(plugin_dir + posixpath.sep):
             if f.endswith(posixpath.sep + '__init__.py'):
