@@ -31,5 +31,6 @@ def parser(content):
     parts = publish_parts(source=content, writer=BlohgWriter(),
                           settings_overrides={'input_encoding': 'utf-8',
                                               'output_encoding': 'utf-8',
-                                              'initial_header_level': 3})
+                                              'initial_header_level': 3,
+                                              'docinfo_xform': 0})
     return {'title': parts['title'], 'fragment': parts['fragment']}
