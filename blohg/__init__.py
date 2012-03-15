@@ -14,8 +14,28 @@ from flaskext.babel import Babel
 
 # import blohg stuff
 from blohg.hgapi import setup_mercurial
+from blohg.hgapi.plugins import lookup_plugins
 from blohg.version import version as __version__
 from blohg.views import views
+
+
+class Blohg(Flask):
+
+    def wsgi_app(self, *args, **kwargs):
+        if not self.got_first_request:
+            self.hg.reload()
+            if self.config['ENABLE_PLUGINS']:
+                # we need a fake request context to load our plugins.
+                with self.test_request_context():
+                    plugins = lookup_plugins().keys()
+                    tmp = __import__('blohg.plugins', globals(), locals(),
+                                     plugins)
+                    for plugin in plugins:
+                        module = getattr(tmp, plugin)
+                        setupfunc = getattr(module, 'blohg_setup_plugin', None)
+                        if callable(setupfunc):
+                            setupfunc(self)
+        return Flask.wsgi_app(self, *args, **kwargs)
 
 
 def create_app(repo_path=None, hgui=None):
@@ -26,7 +46,7 @@ def create_app(repo_path=None, hgui=None):
     """
 
     # create the app object
-    app = Flask(__name__)
+    app = Blohg(__name__)
 
     # register some sane default config values
     app.config.setdefault('AUTHOR', 'Your Name Here')
@@ -38,9 +58,11 @@ def create_app(repo_path=None, hgui=None):
     app.config.setdefault('TEMPLATES_DIR', 'templates')
     app.config.setdefault('STATIC_DIR', 'static')
     app.config.setdefault('ATTACHMENT_DIR', 'content/attachments')
+    app.config.setdefault('PLUGIN_DIR', 'plugins')
     app.config.setdefault('ROBOTS_TXT', True)
     app.config.setdefault('SHOW_RST_SOURCE', True)
     app.config.setdefault('POST_EXT', '.rst')
+    app.config.setdefault('ENABLE_PLUGINS', False)
 
     app.config['REPO_PATH'] = repo_path
 
