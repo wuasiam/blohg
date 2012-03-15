@@ -32,7 +32,7 @@ class Blohg(Flask):
                                      plugins)
                     for plugin in plugins:
                         module = getattr(tmp, plugin)
-                        setupfunc = getattr(module, 'setup', None)
+                        setupfunc = getattr(module, 'blohg_setup_plugin', None)
                         if callable(setupfunc):
                             setupfunc(self)
         return Flask.wsgi_app(self, *args, **kwargs)
