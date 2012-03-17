@@ -28,13 +28,9 @@ class Blohg(Flask):
                 # we need a fake request context to load our plugins.
                 with self.test_request_context():
                     plugins = lookup_plugins().keys()
-                    tmp = __import__('blohg.plugins', globals(), locals(),
-                                     plugins)
-                    for plugin in plugins:
-                        module = getattr(tmp, plugin)
-                        setupfunc = getattr(module, 'blohg_setup_plugin', None)
-                        if callable(setupfunc):
-                            setupfunc(self)
+                    to_load = [i for i in plugins if i in \
+                               self.config['PLUGINS']]
+                    __import__('blohg.plugins', fromlist=to_load)
         return Flask.wsgi_app(self, *args, **kwargs)
 
 
@@ -63,6 +59,7 @@ def create_app(repo_path=None, hgui=None):
     app.config.setdefault('SHOW_RST_SOURCE', True)
     app.config.setdefault('POST_EXT', '.rst')
     app.config.setdefault('ENABLE_PLUGINS', False)
+    app.config.setdefault('PLUGINS', [])
 
     app.config['REPO_PATH'] = repo_path
 
