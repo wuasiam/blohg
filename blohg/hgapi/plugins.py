@@ -16,7 +16,7 @@ import posixpath
 import sys
 
 
-class BlohgImporter(object):
+class MercurialImporter(object):
     """Loader and Finder to import Python plugins from the Mercurial
     repository. Mostly based on:
     https://github.com/mitsuhiko/flask/blob/master/flask/exthook.py

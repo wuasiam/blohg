@@ -11,8 +11,8 @@
 
 
 def setup():
-    from blohg.hgapi.plugins import BlohgImporter
-    BlohgImporter.new(__name__)
+    from blohg.hgapi.plugins import MercurialImporter
+    MercurialImporter.new(__name__)
 
 
 setup()
