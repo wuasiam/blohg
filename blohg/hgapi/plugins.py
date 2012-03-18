@@ -38,7 +38,7 @@ class MercurialImporter(object):
 
     @staticmethod
     def new(*args, **kwargs):
-        obj = BlohgImporter(*args, **kwargs)
+        obj = MercurialImporter(*args, **kwargs)
         sys.meta_path[:] = [x for x in sys.meta_path if obj != x] + [obj]
         return obj
 
