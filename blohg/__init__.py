@@ -14,8 +14,24 @@ from flaskext.babel import Babel
 
 # import blohg stuff
 from blohg.hgapi import setup_mercurial
+from blohg.hgapi.plugins import lookup_plugins
 from blohg.version import version as __version__
 from blohg.views import views
+
+
+class Blohg(Flask):
+
+    def wsgi_app(self, *args, **kwargs):
+        if not self.got_first_request:
+            self.hg.reload()
+            if self.config['ENABLE_PLUGINS']:
+                # we need a fake request context to load our plugins.
+                with self.test_request_context():
+                    plugins = lookup_plugins().keys()
+                    to_load = [i for i in plugins if i in \
+                               self.config['PLUGINS']]
+                    __import__('blohg.plugins', fromlist=to_load)
+        return Flask.wsgi_app(self, *args, **kwargs)
 
 
 def create_app(repo_path=None, hgui=None):
@@ -26,7 +42,7 @@ def create_app(repo_path=None, hgui=None):
     """
 
     # create the app object
-    app = Flask(__name__)
+    app = Blohg(__name__)
 
     # register some sane default config values
     app.config.setdefault('AUTHOR', u'Your Name Here')
@@ -34,13 +50,16 @@ def create_app(repo_path=None, hgui=None):
     app.config.setdefault('TAGLINE', u'Your cool tagline')
     app.config.setdefault('TITLE', u'Your title')
     app.config.setdefault('TITLE_HTML', u'Your HTML title')
-    app.config.setdefault('CONTENT_DIR', u'content')
-    app.config.setdefault('TEMPLATES_DIR', u'templates')
-    app.config.setdefault('STATIC_DIR', u'static')
-    app.config.setdefault('ATTACHMENT_DIR', u'content/attachments')
+    app.config.setdefault('CONTENT_DIR', 'content')
+    app.config.setdefault('TEMPLATES_DIR', 'templates')
+    app.config.setdefault('STATIC_DIR', 'static')
+    app.config.setdefault('ATTACHMENT_DIR', 'content/attachments')
+    app.config.setdefault('PLUGIN_DIR', 'plugins')
     app.config.setdefault('ROBOTS_TXT', True)
     app.config.setdefault('SHOW_RST_SOURCE', True)
-    app.config.setdefault('POST_EXT', u'.rst')
+    app.config.setdefault('POST_EXT', '.rst')
+    app.config.setdefault('ENABLE_PLUGINS', False)
+    app.config.setdefault('PLUGINS', [])
 
     app.config['REPO_PATH'] = repo_path
 
