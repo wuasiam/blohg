@@ -12,10 +12,10 @@
 import re
 import time
 
-from mercurial import encoding
-
 from datetime import datetime
-from werkzeug.utils import cached_property
+from flask.helpers import locked_cached_property
+from jinja2 import Markup
+from mercurial import encoding
 
 from blohg.rst import parser
 
@@ -95,17 +95,17 @@ class Page(object):
                     except:
                         del self._vars['author']
 
-    @cached_property
+    @locked_cached_property
     def parsed_source(self):
         return parser(self.full)
 
-    @cached_property
+    @locked_cached_property
     def parsed_abstract(self):
         if not self.read_more:
             return self.parsed_source
         return parser(self.abstract)
 
-    @cached_property
+    @locked_cached_property
     def parsed_author(self):
         if 'author' not in self._vars:
             return {}
@@ -114,23 +114,32 @@ class Page(object):
             return {}
         return rv.groupdict()
 
-    @cached_property
+    @locked_cached_property
     def title(self):
-        return self.parsed_source['title']
+        return self._vars.get('title', self.parsed_source['title'])
 
-    @cached_property
+    @locked_cached_property
+    def description(self):
+        return self._vars.get('description',
+                              self.parsed_source['first_paragraph_as_text'])
+
+    @locked_cached_property
+    def images(self):
+        return self.parsed_source.get('images', [])
+
+    @locked_cached_property
     def author_name(self):
         return self.parsed_author['name']
 
-    @cached_property
+    @locked_cached_property
     def author_email(self):
         return self.parsed_author['email']
 
-    @cached_property
+    @locked_cached_property
     def path(self):
         return self._filectx.path()
 
-    @cached_property
+    @locked_cached_property
     def slug(self):
         rv = re.match(r'^' + self._parent.content_dir + r'[\\/](.+)' +
                       '\\' + self._parent.post_ext + '$',
@@ -138,27 +147,35 @@ class Page(object):
         if rv is not None:
             return rv.group(1)
 
-    @cached_property
+    @locked_cached_property
     def aliases(self):
         return self._vars.get('aliases', [])
 
-    @cached_property
+    @locked_cached_property
     def abstract(self):
         return hg2u(re_read_more.split(self._filecontent)[0])
 
-    @cached_property
+    @locked_cached_property
     def abstract_html(self):
+        return Markup(self.parsed_abstract['fragment'])
+
+    @locked_cached_property
+    def abstract_raw_html(self):
         return self.parsed_abstract['fragment']
 
-    @cached_property
+    @locked_cached_property
     def full(self):
         return hg2u(self._filecontent)
 
-    @cached_property
+    @locked_cached_property
     def full_html(self):
+        return Markup(self.parsed_source['fragment'])
+
+    @locked_cached_property
+    def full_raw_html(self):
         return self.parsed_source['fragment']
 
-    @cached_property
+    @locked_cached_property
     def read_more(self):
         return len(re_read_more.split(self._filecontent)) > 1
 
@@ -186,6 +203,6 @@ class Post(Page):
             self._vars['tags'] = [i.strip() for i in \
                                   self._vars['tags'].split(',')]
 
-    @cached_property
+    @locked_cached_property
     def tags(self):
         return self._vars.get('tags', [])

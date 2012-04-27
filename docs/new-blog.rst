@@ -3,7 +3,7 @@
 Creating a new blog
 ===================
 
-This section will guide you through all the steps required to get a blohg-based
+This section will guide you through the steps required to get a blohg-based
 blog up and running.
 
 Make sure that you read all the content available here in order to know how
@@ -15,7 +15,7 @@ to use blohg properly.
 Initializing the repository
 ---------------------------
 
-blohg will install a script called ``blohg`` for you. This script is capable to
+blohg will install a script called ``blohg`` for you. This script is able to
 create a new Mercurial repository, using the default template and/or run the
 development server. It will be your main tool to interact with blohg.
 
@@ -25,7 +25,7 @@ To create a new repository, type::
 
 Where ``my_blohg`` is the directory where the new repository will be created.
 
-Make sure that the directory doesn't exists, or is empty, before try to
+Make sure that the directory doesn't exist, or is empty, before try to
 initialize the repository.
 
 When the repository is created, do the initial commit::
@@ -114,13 +114,15 @@ These are the built-in configuration options for the ``config.yaml`` file:
 |                      | attachments are stored.                           |                         |
 +----------------------+---------------------------------------------------+-------------------------+
 | ROBOTS_TXT           | Enable ``robots.txt``, to prevent search engines  | ``True``                |
-|                      | to index source files, a.k.a. don't follow "View  |                         |
-|                      | Source" hiperlinks.                               |                         |
+|                      | from indexing source files, a.k.a. don't follow   |                         |
+|                      | "View Source" hiperlinks.                         |                         |
 +----------------------+---------------------------------------------------+-------------------------+
 | SHOW_RST_SOURCE      | Enable the view that shows the reStructured text  | ``True``                |
 |                      | source of your posts and pages.                   |                         |
 +----------------------+---------------------------------------------------+-------------------------+
 | POST_EXT             | The extension of your post/page files.            | ``'.rst'``              |
++----------------------+---------------------------------------------------+-------------------------+
+| OPENGRAPH            | Enable the `Open Graph`_ meta tags block.         | ``True``                |
 +----------------------+---------------------------------------------------+-------------------------+
 
 The default values are used if the given configuration key is ommited (or
@@ -165,13 +167,15 @@ These are the blohg built-in variables globally available for your templates:
 Built-in templates
 ~~~~~~~~~~~~~~~~~~
 
-These are the built-in templates, that can be overrided from the repository:
+These are the built-in templates, that can be overriden from the repository:
 
 404.html
 ````````
 
 Template for the 404 error page. You don't need to override it on your
 Mercurial repository if you don't want to customize something.
+
+.. _posts_html:
 
 _posts.html
 ```````````
@@ -182,36 +186,42 @@ templates, and they will be ignored. You don't need to override this file
 in the repository.
 
 .. _Disqus: http://disqus.com/
+.. _`Open Graph`: http://ogp.me/
 
 
 These are the custom blocks available:
 
-+-------------+-------------------+---------------------------------------------+
-| Type        | Block name        | Where to place                              |
-+=============+===================+=============================================+
-| Disqus_     | ``disqus_header`` | inside the html header, in ``base.html``.   |
-|             +-------------------+---------------------------------------------+
-|             | ``disqus_post``   | after the post contents, in ``posts.html``. |
-|             +-------------------+---------------------------------------------+
-|             | ``disqus_footer`` | at the end of ``base.html``, before the     |
-|             |                   | ``</body>`` tag.                            |
-+-------------+-------------------+---------------------------------------------+
-| Pagination  | ``pagination``    | at the end of ``posts.html``, inside the    |
-|             |                   | main ``div``. There's a CSS class, called   |
-|             |                   | ``pagination``, to help you when changing   |
-|             |                   | the style.                                  |
-+-------------+-------------------+---------------------------------------------+
++---------------+----------------------+---------------------------------------------+
+| Type          | Block name           | Where to place                              |
++===============+======================+=============================================+
+| Disqus_       | ``disqus_header``    | inside the html header, in ``base.html``.   |
+|               +----------------------+---------------------------------------------+
+|               | ``disqus_post``      | after the post contents, in ``posts.html``. |
+|               +----------------------+---------------------------------------------+
+|               | ``disqus_footer``    | at the end of ``base.html``, before the     |
+|               |                      | ``</body>`` tag.                            |
++---------------+----------------------+---------------------------------------------+
+| Pagination    | ``pagination``       | at the end of ``posts.html``, inside the    |
+|               |                      | main ``div``. There's a CSS class, called   |
+|               |                      | ``pagination``, to help you when changing   |
+|               |                      | the style.                                  |
++---------------+----------------------+---------------------------------------------+
+| `Open Graph`_ | ``opengraph_header`` | inside the html header, in ``base.html``    |
++---------------+----------------------+---------------------------------------------+
 
 Disqus_ support depends on the a ``DISQUS`` configuration variable, that should
 contain the value of the Disqus_ identifier of your blog. To get it, create an
 account at http://disqus.com/.
 
+`Open Graph`_ support depends on a ``OPENGRAPH`` boolean configuration variable,
+that defaults to ``True``.
+
 
 base.html
 `````````
 
-The main template file, it's mandatory to be provided in the Mercurial
-repository. This template is inherited by all the other ones.
+The main template file, it's mandatory that this provided in the Mercurial
+repository. This template is inherited from by all others.
 
 
 posts.html
@@ -219,7 +229,7 @@ posts.html
 
 Template used by the views that show partial/full content of pages and posts.
 
-It's inherited by ``_posts.html`` and can make use of his Jinja2_ blocks.
+It inherites from ``_posts.html`` and can make use of its Jinja2_ blocks.
 
 Local variables available for this tempalte:
 
@@ -230,7 +240,7 @@ Local variables available for this tempalte:
 +------------------+-----------------------------------------------------------+
 | ``posts``        | A list with all the posts (Metadata objects).             |
 +------------------+-----------------------------------------------------------+
-| ``full_content`` | A boolean that enable display full content of ``posts``   |
+| ``full_content`` | A boolean that enables display full content of ``posts``  |
 |                  | and not just the abstracts.                               |
 +------------------+-----------------------------------------------------------+
 | ``pagination``   | A dictionary with 2 items (``num_pages``: number of       |
@@ -263,7 +273,7 @@ Static files
 ------------
 
 The ``static/`` directory will store your static files, like CSS_ and images.
-You should avoid store big files inside the Mercurial repository.
+You should avoid storing big files inside the Mercurial repository.
 
 .. _CSS: http://www.w3.org/Style/CSS/
 
@@ -333,16 +343,48 @@ blohg generates an Atom_ feed for all the posts and/or tags.
 
 .. _Atom: http://en.wikipedia.org/wiki/Atom_%28standard%29
 
-For all the posts (actually just the ``POSTS_PER_PAGE`` last posts), use the
-following URL:
+To include all the posts (actually just the ``POSTS_PER_PAGE`` last posts), use
+the following URL:
 
 http://example.org/atom/
 
-For each tag, use the following URLs:
+For each tag, use URLs of this form:
 
 - http://example.org/atom/foo/
 - http://example.org/atom/bar/
 
-For multiple combined tags, use the following URL:
+For multiple combined tags, use URLs of this form:
 
 - http://example.org/atom/foo/bar/
+
+
+Facebook/Google+ integration
+----------------------------
+
+We provide Facebook_/`Google+`_ integration using `Open Graph`_ HTML meta-tags.
+
+.. _Facebook: http://www.facebook.com/
+.. _`Google+`: http://plus.google.com/
+
+There's a Jinja2_ block available, that will add all the needed property tags
+for you. See :ref:`posts_html`.
+
+These are the property tags that will be created:
+
++-------------+--------------------------------------------------------------+
+| Property    | Value                                                        |
++=============+==============================================================+
+| title       | ``TITLE`` or the page/post title, if applicable.             |
++-------------+--------------------------------------------------------------+
+| description | ``TAGLINE`` or the page/post first paragraph, if applicable. |
+|             | Can be overrided by a ``.. description:`` reStructuredText   |
+|             | comment.                                                     |
++-------------+--------------------------------------------------------------+
+| image       | Full URLs of all the images found in the page/post, if       |
+|             | applicable. Each image will have its own ``meta`` tag.       |
++-------------+--------------------------------------------------------------+
+
+If you don't want to use the default block, just remove the block call from
+your ``base.html`` template and write your own tags there. Use the default
+block, from ``_posts.html``, as reference.
+

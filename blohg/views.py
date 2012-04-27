@@ -40,17 +40,19 @@ def atom(tag=None):
     else:
         posts = current_app.hg.get_all(True)
     feed = AtomFeed(title=title, subtitle=current_app.config['TAGLINE'],
-                    url=url_for('views.home'), feed_url=url_for('views.atom',
-                                                                tag=tag),
+                    url=url_for('views.home', _external=True),
+                    id=url_for('views.atom', tag=tag),
+                    feed_url=url_for('views.atom', tag=tag, _external=True),
                     author=current_app.config['AUTHOR'],
                     generator=('blohg', None, None))
     for post in posts[:int(current_app.config['POSTS_PER_PAGE'])]:
-        feed.add(FeedEntry(title=post.title, content=post.full_html,
-                           summary=post.abstract_html,
+        feed.add(FeedEntry(title=post.title, content=post.full_raw_html,
+                           summary=post.abstract_raw_html,
                            id=url_for('views.content', slug=post.slug),
                            url=url_for('views.content', slug=post.slug,
                                        _external=True),
-                           author=current_app.config['AUTHOR'],
+                           author=dict(name=post.author_name,
+                                       email=post.author_email),
                            published=post.datetime, updated=post.datetime))
     return feed
 
@@ -69,7 +71,10 @@ def content(slug):
     if slug.startswith('post'):
         title = u'Post: %s' % page.title
     return render_template('_posts.html', title=title, posts=[page],
-                           full_content=True)
+                           full_content=True,
+                           meta=dict(title=page.title,
+                                     description=page.description,
+                                     images=page.images))
 
 
 @views.route('/')

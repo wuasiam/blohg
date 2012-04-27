@@ -60,6 +60,7 @@ def create_app(repo_path=None, hgui=None):
     app.config.setdefault('POST_EXT', '.rst')
     app.config.setdefault('ENABLE_PLUGINS', False)
     app.config.setdefault('PLUGINS', [])
+    app.config.setdefault('OPENGRAPH', True)
 
     app.config['REPO_PATH'] = repo_path
 

@@ -34,4 +34,6 @@ def parser(content):
                                               'initial_header_level': 3,
                                               'docinfo_xform': 0,
                                               'field_name_limit': None})
-    return {'title': parts['title'], 'fragment': parts['fragment']}
+    return {'title': parts['title'], 'fragment': parts['fragment'],
+            'first_paragraph_as_text': parts['first_paragraph_as_text'],
+            'images': parts['images']}
