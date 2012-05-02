@@ -113,6 +113,33 @@ class Freeze(Command):
             freezer.serve()
 
 
+class BlohgServer(Server):
+
+    description = 'runs the blohg local server.'
+
+    def __init__(self, enable_plugins=True, *args, **kwargs):
+        Server.__init__(self, *args, **kwargs)
+        self.enable_plugins = enable_plugins
+
+    def get_options(self):
+        options = Server.get_options(self)
+        if self.enable_plugins:
+            options += (Option('--disable-plugins',
+                               action='store_false',
+                               dest='enable_plugins',
+                               default=self.enable_plugins),)
+        else:
+            options += (Option('--enable-plugins',
+                               action='store_true',
+                               dest='enable_plugins',
+                               default=self.enable_plugins),)
+        return options
+
+    def handle(self, app, enable_plugins, *args, **kwargs):
+        app.enable_plugins = enable_plugins
+        return Server.handle(self, app, *args, **kwargs)
+
+
 def create_script():
     """Script object factory
 
@@ -123,9 +150,9 @@ def create_script():
     script = Manager(create_app, with_default_commands=False)
     script.add_option('-r', '--repo-path', dest='repo_path',
                       default=os.getcwd(), required=False)
-    server = Server(use_debugger=True, use_reloader=True)
-    server.description = 'runs the blohg local server.'
-    script.add_command('runserver', server)
+    script.add_command('runserver', BlohgServer(use_debugger=True,
+                                                use_reloader=True,
+                                                enable_plugins=True))
     script.add_command('initrepo', InitRepo())
     script.add_command('freeze', Freeze())
 

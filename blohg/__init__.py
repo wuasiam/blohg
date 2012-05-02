@@ -9,28 +9,74 @@
     :license: GPL-2, see LICENSE for more details.
 """
 
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, _app_ctx_stack
+from flask.config import ConfigAttribute
 from flaskext.babel import Babel
 
 # import blohg stuff
 from blohg.hgapi import setup_mercurial
-from blohg.hgapi.plugins import lookup_plugins
+from blohg.hgapi.plugins import lookup_plugins, MercurialImporter
 from blohg.version import version as __version__
 from blohg.views import views
 
 
+class _GlobalsCtx(object):
+    pass
+
+
+class BlohgPlugin(object):
+
+    def __init__(self, name):
+        self.name = name
+        # id is used as prefix for most of the plugin related stuff naming
+        self.id = self.name.replace('.', '_')
+        self._callbacks = []
+
+    @property
+    def globals(self):
+        ctx = _app_ctx_stack.top
+        if ctx is not None:
+            key = self.id + '_globals'
+            if not hasattr(ctx, key):
+                setattr(ctx, key, _GlobalsCtx())
+            return getattr(ctx, key)
+        raise RuntimeError('Failed to initialize plugin globals.')
+
+    def init_plugin(self, f):
+        self._callbacks.append(f)
+        return f
+
+    def _register_plugin(self, app):
+        for callback in self._callbacks:
+            if callable(callback):
+                callback(app)
+
+
+def register_plugin(plugin):
+    ctx = _app_ctx_stack.top
+    if ctx is not None:
+        if not hasattr(ctx, 'plugin_registry'):
+            ctx.plugin_registry = []
+        ctx.plugin_registry.append(plugin)
+        return
+    raise RuntimeError('Failed to initialize plugin registry.')
+
+
 class Blohg(Flask):
 
+    enable_plugins = ConfigAttribute('ENABLE_PLUGINS')
+
     def wsgi_app(self, *args, **kwargs):
-        if not self.got_first_request:
+        if not self.got_first_request and self.enable_plugins:
+            MercurialImporter.new('blohg.plugins')
             self.hg.reload()
-            if self.config['ENABLE_PLUGINS']:
-                # we need a fake request context to load our plugins.
-                with self.test_request_context():
-                    plugins = lookup_plugins().keys()
-                    to_load = [i for i in plugins if i in \
-                               self.config['PLUGINS']]
-                    __import__('blohg.plugins', fromlist=to_load)
+            with self.app_context():
+                import blohg.plugins
+                ctx = _app_ctx_stack.top
+                if hasattr(ctx, 'plugin_registry'):
+                    for plugin in ctx.plugin_registry:
+                        if isinstance(plugin, BlohgPlugin):
+                            plugin._register_plugin(self)
         return Flask.wsgi_app(self, *args, **kwargs)
 
 
