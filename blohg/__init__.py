@@ -65,6 +65,7 @@ def register_plugin(plugin):
 class Blohg(Flask):
 
     enable_plugins = ConfigAttribute('ENABLE_PLUGINS')
+    repo_path = ConfigAttribute('REPO_PATH')
 
     def wsgi_app(self, *args, **kwargs):
         if not self.got_first_request and self.enable_plugins:
@@ -105,7 +106,6 @@ def create_app(repo_path=None, hgui=None):
     app.config.setdefault('SHOW_RST_SOURCE', True)
     app.config.setdefault('POST_EXT', '.rst')
     app.config.setdefault('ENABLE_PLUGINS', False)
-    app.config.setdefault('PLUGINS', [])
     app.config.setdefault('OPENGRAPH', True)
 
     app.config['REPO_PATH'] = repo_path

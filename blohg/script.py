@@ -137,6 +137,27 @@ class BlohgServer(Server):
 
     def handle(self, app, enable_plugins, *args, **kwargs):
         app.enable_plugins = enable_plugins
+
+        # find plugin files
+        def _listfiles(directory, files):
+            for f in os.listdir(directory):
+                fname = os.path.join(directory, f)
+                if os.path.isdir(fname):
+                    _listfiles(fname, files)
+                else:
+                    files.append(os.path.abspath(fname))
+        app.hg.reload()
+        extra_files = []
+        _listfiles(os.path.join(app.repo_path, app.config['PLUGIN_DIR']),
+                   extra_files)
+
+        if 'extra_files' in self.server_options \
+           and self.server_options['extra_files'] is not None:
+            self.server_options['extra_files'] = \
+                list(self.server_options['extra_files']) + extra_files
+        else:
+            self.server_options['extra_files'] = extra_files
+
         return Server.handle(self, app, *args, **kwargs)
 
 
