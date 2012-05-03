@@ -24,8 +24,11 @@ class MercurialImporter(object):
     See PEP 302 for details.
     """
 
-    def __init__(self, wrapper_module):
+    def __init__(self, app, wrapper_module):
+        self.app = app
         self.wrapper_module = wrapper_module
+        with self.app.app_context():
+            self.plugins = lookup_plugins()
 
     def __eq__(self, other):
         return self.__class__.__module__ == other.__class__.__module__ and \
@@ -42,24 +45,49 @@ class MercurialImporter(object):
         return obj
 
     def find_module(self, fullname, path=None):
-        if fullname == self.wrapper_module or \
-           fullname.startswith(self.wrapper_module + '.'):
-            return self
+        name = fullname[len(self.wrapper_module)+1:]
+        with self.app.app_context():
+            if (fullname == self.wrapper_module or \
+                fullname.startswith(self.wrapper_module + '.')) \
+               and name in self.plugins:
+                return self
 
     def load_module(self, fullname):
-        name = fullname[len(self.wrapper_module)+1:]
-        modules = lookup_plugins()
-        if name in modules:
-            fctx = modules[name]
-            fname = fctx.path()
-            sys.modules[fullname] = mod = new_module(fullname)
-            mod.__loader__ = self
-            mod.__file__ = 'repo:' + fname
-            if fname.endswith(posixpath.sep + '__init__.py'):
-                mod.__path__ = [fname.rsplit(posixpath.sep, 1)[0]]
-            code = compile(fctx.data(), mod.__file__, 'exec')
-            exec code in mod.__dict__
-            return mod
+        code = self.get_code(fullname)
+        ispkg = self.is_package(fullname)
+        mod = sys.modules.setdefault(fullname, new_module(fullname))
+        mod.__file__ = self.get_filename(fullname)
+        mod.__loader__ = self
+        if ispkg:
+            mod.__path__ = [mod.__file__.rsplit(posixpath.sep, 1)[0]]
+            mod.__package__ = fullname
+        else:
+            mod.__package__ = fullname.rpartition('.')[0]
+        exec(code, mod.__dict__)
+        return mod
+
+    def get_fctx(self, fullname):
+        with self.app.app_context():
+            name = fullname[len(self.wrapper_module)+1:]
+            if name in self.plugins:
+                return self.plugins[name]
+        raise ImportError('Module not found: %s' % fullname)
+
+    def is_package(self, fullname):
+        fctx = self.get_fctx(fullname)
+        return fctx.path().endswith(posixpath.sep + '__init__.py')
+
+    def get_code(self, fullname):
+        fctx = self.get_fctx(fullname)
+        return compile(fctx.data(), 'repo:%s' % fctx.path(), 'exec')
+
+    def get_source(self, fullname):
+        fctx = self.get_fctx(fullname)
+        return fctx.data()
+
+    def get_filename(self, fullname):
+        fctx = self.get_fctx(fullname)
+        return 'repo:%s' % fctx.path()
 
 
 def lookup_plugins():
