@@ -42,7 +42,7 @@ class BlohgPlugin(object):
             return getattr(ctx, key)
         raise RuntimeError('Failed to initialize plugin globals.')
 
-    def init_plugin(self, f):
+    def setup_plugin(self, f):
         self._callbacks.append(f)
         return f
 
