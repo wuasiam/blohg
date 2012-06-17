@@ -140,6 +140,8 @@ class BlohgServer(Server):
 
         # find plugin files
         def _listfiles(directory, files):
+            if not os.path.exists(directory):
+                return
             for f in os.listdir(directory):
                 fname = os.path.join(directory, f)
                 if os.path.isdir(fname):
