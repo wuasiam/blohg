@@ -52,20 +52,20 @@ class BlohgPlugin(object):
         self._callbacks.append(f)
         return f
 
+    def _register_plugin(self, app):
+        for callback in self._callbacks:
+            if callable(callback):
+                callback(app)
 
-def _register_plugin(self, app):
-    for callback in self._callbacks:
-        if callable(callback):
-            callback(app)
 
-            def register_plugin(plugin):
-                ctx = _app_ctx_stack.top
-                if ctx is not None:
-                    if not hasattr(ctx, 'plugin_registry'):
-                        ctx.plugin_registry = []
-                    ctx.plugin_registry.append(plugin)
-                    return
-                raise RuntimeError('Failed to initialize plugin registry.')
+def register_plugin(plugin):
+    ctx = _app_ctx_stack.top
+    if ctx is not None:
+        if not hasattr(ctx, 'plugin_registry'):
+            ctx.plugin_registry = []
+        ctx.plugin_registry.append(plugin)
+        return
+    raise RuntimeError('Failed to initialize plugin registry.')
 
 
 class BlohgApp(Flask):
