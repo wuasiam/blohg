@@ -75,19 +75,19 @@ class MercurialImporter(object):
 
     def is_package(self, fullname):
         fctx = self.get_fctx(fullname)
-        return fctx.path().endswith(posixpath.sep + '__init__.py')
+        return fctx.path.endswith(posixpath.sep + '__init__.py')
 
     def get_code(self, fullname):
         fctx = self.get_fctx(fullname)
-        return compile(fctx.data(), 'repo:%s' % fctx.path(), 'exec')
+        return compile(fctx.data, 'repo:%s' % fctx.path, 'exec')
 
     def get_source(self, fullname):
         fctx = self.get_fctx(fullname)
-        return fctx.data()
+        return fctx.data
 
     def get_filename(self, fullname):
         fctx = self.get_fctx(fullname)
-        return 'repo:%s' % fctx.path()
+        return 'repo:%s' % fctx.path
 
 
 def lookup_plugins():

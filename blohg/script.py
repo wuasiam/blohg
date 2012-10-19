@@ -26,20 +26,61 @@ filterwarnings('ignore', category=MissingURLGeneratorWarning)
 
 class Server(_Server):
 
+    description = 'runs the blohg local server.'
+
+    def __init__(self, enable_plugins=True, *args, **kwargs):
+        _Server.__init__(self, *args, **kwargs)
+        self.enable_plugins = enable_plugins
+
     def get_options(self):
         options = _Server.get_options(self)
         options += (Option('--no-working-dir', '-n', dest='working_dir',
                            default=True, action='store_false'),)
+        if self.enable_plugins:
+            options += (Option('--disable-plugins',
+                               action='store_false',
+                               dest='enable_plugins',
+                               default=self.enable_plugins),)
+        else:
+            options += (Option('--enable-plugins',
+                               action='store_true',
+                               dest='enable_plugins',
+                               default=self.enable_plugins),)
         return options
 
-    def handle(self, app, *args, **kwargs):
+    def handle(self, app, enable_plugins, *args, **kwargs):
+        app.enable_plugins = enable_plugins
+
         os.environ['RUNNING_FROM_CLI'] = '1'
         app.config['CHANGECTX'] = 'working_dir'
         if 'working_dir' in kwargs:
             app.config['CHANGECTX'] = kwargs['working_dir'] and 'working_dir' \
                 or 'default'
             del kwargs['working_dir']
-        _Server.handle(self, app, *args, **kwargs)
+
+        # find plugin files
+        def _listfiles(directory, files):
+            if not os.path.exists(directory):
+                return
+            for f in os.listdir(directory):
+                fname = os.path.join(directory, f)
+                if os.path.isdir(fname):
+                    _listfiles(fname, files)
+                else:
+                    files.append(os.path.abspath(fname))
+
+        extra_files = []
+        _listfiles(os.path.join(app.repo_path, app.config['PLUGIN_DIR']),
+                   extra_files)
+
+        if 'extra_files' in self.server_options \
+           and self.server_options['extra_files'] is not None:
+            self.server_options['extra_files'] = \
+                list(self.server_options['extra_files']) + extra_files
+        else:
+            self.server_options['extra_files'] = extra_files
+
+        return _Server.handle(self, app, *args, **kwargs)
 
 
 class InitRepo(Command):
@@ -134,56 +175,6 @@ class Freeze(Command):
             freezer.serve()
 
 
-class BlohgServer(Server):
-
-    description = 'runs the blohg local server.'
-
-    def __init__(self, enable_plugins=True, *args, **kwargs):
-        Server.__init__(self, *args, **kwargs)
-        self.enable_plugins = enable_plugins
-
-    def get_options(self):
-        options = Server.get_options(self)
-        if self.enable_plugins:
-            options += (Option('--disable-plugins',
-                               action='store_false',
-                               dest='enable_plugins',
-                               default=self.enable_plugins),)
-        else:
-            options += (Option('--enable-plugins',
-                               action='store_true',
-                               dest='enable_plugins',
-                               default=self.enable_plugins),)
-        return options
-
-    def handle(self, app, enable_plugins, *args, **kwargs):
-        app.enable_plugins = enable_plugins
-
-        # find plugin files
-        def _listfiles(directory, files):
-            if not os.path.exists(directory):
-                return
-            for f in os.listdir(directory):
-                fname = os.path.join(directory, f)
-                if os.path.isdir(fname):
-                    _listfiles(fname, files)
-                else:
-                    files.append(os.path.abspath(fname))
-        app.hg.reload()
-        extra_files = []
-        _listfiles(os.path.join(app.repo_path, app.config['PLUGIN_DIR']),
-                   extra_files)
-
-        if 'extra_files' in self.server_options \
-           and self.server_options['extra_files'] is not None:
-            self.server_options['extra_files'] = \
-                list(self.server_options['extra_files']) + extra_files
-        else:
-            self.server_options['extra_files'] = extra_files
-
-        return Server.handle(self, app, *args, **kwargs)
-
-
 def create_script():
     """Script object factory
 
@@ -194,9 +185,9 @@ def create_script():
     script = Manager(create_app, with_default_commands=False)
     script.add_option('-r', '--repo-path', dest='repo_path',
                       default=os.getcwd(), required=False)
-    script.add_command('runserver', BlohgServer(use_debugger=True,
-                                                use_reloader=True,
-                                                enable_plugins=True))
+    script.add_command('runserver', Server(use_debugger=True,
+                                           use_reloader=True,
+                                           enable_plugins=True))
     script.add_command('initrepo', InitRepo())
     script.add_command('freeze', Freeze())
 
