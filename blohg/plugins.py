@@ -45,7 +45,7 @@ class MercurialImporter(object):
         return obj
 
     def find_module(self, fullname, path=None):
-        name = fullname[len(self.wrapper_module)+1:]
+        name = fullname[len(self.wrapper_module) + 1:]
         with self.app.app_context():
             if (fullname == self.wrapper_module or \
                 fullname.startswith(self.wrapper_module + '.')) \
@@ -68,7 +68,7 @@ class MercurialImporter(object):
 
     def get_fctx(self, fullname):
         with self.app.app_context():
-            name = fullname[len(self.wrapper_module)+1:]
+            name = fullname[len(self.wrapper_module) + 1:]
             if name in self.plugins:
                 return self.plugins[name]
         raise ImportError('Module not found: %s' % fullname)
