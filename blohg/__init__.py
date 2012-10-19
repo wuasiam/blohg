@@ -76,9 +76,9 @@ class BlohgApp(Flask):
     def wsgi_app(self, *args, **kwargs):
         if not self.got_first_request and self.enable_plugins:
             self.hg.reload()
-            MercurialImporter.new(self, 'blohg.plugins')
+            MercurialImporter.new(self, 'blohg.ext')
             with self.app_context():
-                __import__('blohg.plugins')
+                __import__('blohg.ext')
                 ctx = _app_ctx_stack.top
                 if hasattr(ctx, 'plugin_registry'):
                     for plugin in ctx.plugin_registry:
